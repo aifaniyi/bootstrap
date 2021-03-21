@@ -6,7 +6,7 @@ generate_go:
 	rm -rf $(OUTDIR)/*
 	echo "module project" > $(OUTDIR)/go.mod
 	go build -o bootstrap && \
-		./bootstrap -lang=golang -inputFile=schema.sample.json -outDirName=$(OUTDIR) -projectName=project
+		./bootstrap new -i schema.sample.json -o $(OUTDIR) -p project
 	export GOPATH=$(HOME)/go && goimports -l -w $(OUTDIR)/
 
 	cp Makefile.template $(OUTDIR)/Makefile
