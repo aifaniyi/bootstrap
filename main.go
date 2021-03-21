@@ -1,40 +1,22 @@
+/*
+Copyright © 2021 NAME HERE <EMAIL ADDRESS>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package main
 
-import (
-	"flag"
-	"fmt"
-	"log"
-)
+import "github.com/aifaniyi/bootstrap/cmd"
 
 func main() {
-	inputFile := flag.String("inputFile", "", "absolute path to schema definition file")
-	lang := flag.String("lang", "", "programming language output to be generated")
-	projectName := flag.String("projectName", "", "name for new project")
-	outDirName := flag.String("outDirName", "", "output directory for models, repos, services and controllers")
-
-	flag.Parse()
-
-	if *lang == "" {
-		log.Fatal("lang is required")
-	}
-
-	if *inputFile == "" {
-		log.Fatal("inputFile schema file name is required")
-	}
-
-	if *projectName == "" {
-		log.Fatal("projectName  is required")
-	}
-
-	switch *lang {
-	case "golang":
-		err := generateGolang(*inputFile, *outDirName, *projectName)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-	default:
-		fmt.Printf("unknown language %s", *lang)
-	}
-
+	cmd.Execute()
 }
