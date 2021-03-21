@@ -1,0 +1,12 @@
+OUTDIR=$(HOME)/go/src/project
+GOPATH=$(HOME)/buildpath
+
+go_import:
+	go mod tidy
+	bash run.sh
+
+run: go_import
+	docker-compose -p project down -v --remove-orphans
+	docker-compose up -d postgres
+	sleep 5
+	cd cmd/project && go build && ./project

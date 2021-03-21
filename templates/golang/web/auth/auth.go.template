@@ -1,0 +1,118 @@
+package auth
+
+import (
+	"crypto/rsa"
+	"fmt"
+	"io/ioutil"
+	"time"
+
+	"gitlab.com/aifaniyi/go-libs/conf"
+	"gitlab.com/aifaniyi/go-libs/logger"
+
+	"gitlab.com/aifaniyi/imager/imager-model/gomodel"
+
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// Keys : keys and signing method
+type Keys struct {
+	Public        *rsa.PublicKey    `json:"-"`
+	Private       *rsa.PrivateKey   `json:"-"`
+	SigningMethod jwt.SigningMethod `json:"-"`
+}
+
+// Claims : token claims
+type Claims struct {
+	ID               int    `json:"id"`
+	Email            string `json:"email"`
+	AccountID        int    `json:"accountId"`
+	AccountReference string `json:"accountReference"`
+	*jwt.StandardClaims
+}
+
+// vars
+var (
+	APIKeys       *Keys
+	tokenValidity int64
+)
+
+func init() {
+	APIKeys = &Keys{}
+	if err := LoadKeysAndSigningMethod(APIKeys); err != nil {
+		logger.Error.Fatal(err)
+	}
+
+	tokenValidity = conf.GetIntEnv("TOKEN_VALIDITY", 24)
+}
+
+// CreatePasswordHash :
+func CreatePasswordHash(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	return string(bytes), err
+}
+
+// CheckPasswordHash :
+func CheckPasswordHash(password, hash string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}
+
+// CreateToken : generate new authentication token
+func CreateToken(user *gomodel.User, account *gomodel.Account) (string, error) {
+	now := time.Now()
+	// https://auth0.com/docs/tokens/concepts/jwt-claims#reserved-claims
+	// https://github.com/dgrijalva/jwt-go/blob/master/http_example_test.go
+
+	token := jwt.NewWithClaims(APIKeys.SigningMethod, Claims{
+		ID:               user.ID,
+		Email:            user.Email,
+		AccountID:        user.AccountID,
+		AccountReference: account.Reference,
+		StandardClaims: &jwt.StandardClaims{
+			IssuedAt:  now.Unix(),
+			ExpiresAt: now.Add(time.Duration(tokenValidity) * time.Hour).Unix(),
+			NotBefore: now.Add(time.Duration(-tokenValidity*5) * time.Minute).Unix(),
+		},
+	})
+
+	// Sign and get the complete encoded token as a string using the secret
+	tokenString, err := token.SignedString(APIKeys.Private)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// Validate : run token validation
+func Validate(authorization string, claims *Claims) (*jwt.Token, error) {
+	tokenString := authorization[7:]
+
+	return jwt.ParseWithClaims(tokenString, claims,
+		func(token *jwt.Token) (interface{}, error) {
+			return APIKeys.Public, nil
+		})
+}
+
+// LoadKeysAndSigningMethod : load keys and signing method
+func LoadKeysAndSigningMethod(apiKey *Keys) error {
+	private, err := ioutil.ReadFile(conf.GetStringEnv("PRIVATE_KEY_FILE", "../../../keys/imager.dev.rsa"))
+	if err != nil {
+		return fmt.Errorf("error loading private key file: %v", err)
+	}
+	if apiKey.Private, err = jwt.ParseRSAPrivateKeyFromPEM(private); err != nil {
+		return fmt.Errorf("error parsing private key file: %v", err)
+	}
+
+	public, err := ioutil.ReadFile(conf.GetStringEnv("PUBLIC_KEY_FILE", "../../../keys/imager.dev.rsa.pub"))
+	if err != nil {
+		return fmt.Errorf("error loading public key file: %v", err)
+	}
+	if apiKey.Public, err = jwt.ParseRSAPublicKeyFromPEM(public); err != nil {
+		return fmt.Errorf("error parsing public key file: %v", err)
+	}
+
+	apiKey.SigningMethod = jwt.GetSigningMethod("RS256")
+
+	return nil
+}

@@ -1,0 +1,118 @@
+{
+    "lang": "golang",
+    "auth": ["facebook", "google"],
+    "entities": [{
+            "name": "User",
+            "description": "user model",
+            "readBy": ["all", "uuid", "email"],
+            "paginate": {
+                "size": 10
+            },
+            "relations": [{
+                "type": "hasOne",
+                "entity": "Address"
+            }],
+            "properties": [{
+                    "name": "uuid",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 36,
+                    "nullable": false,
+                    "dto": true,
+                    "indexable": true,
+                    "unique": true,
+                    "description": "unique uuid for entity"
+                },
+                {
+                    "name": "email",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 100,
+                    "nullable": false,
+                    "dto": true,
+                    "indexable": true,
+                    "unique": true,
+                    "description": "unique user email; can be used for authentication"
+                },
+                {
+                    "name": "firstname",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 60,
+                    "nullable": true,
+                    "dto": true,
+                    "description": "user firstname"
+                },
+                {
+                    "name": "middlename",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 60,
+                    "nullable": true,
+                    "dto": true,
+                    "description": "user middlename"
+                },
+                {
+                    "name": "lastname",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 60,
+                    "nullable": true,
+                    "dto": true,
+                    "description": "user lastname"
+                },
+                {
+                    "name": "password",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 255,
+                    "nullable": false,
+                    "dto": false,
+                    "description": "user password (never transmitted)"
+                },
+                {
+                    "name": "alias",
+                    "type": {
+                        "name": "string"
+                    },
+                    "width": 50,
+                    "nullable": true,
+                    "dto": true,
+                    "description": "user alias"
+                }
+            ]
+        },
+        {
+            "name": "Address",
+            "description": "user address model",
+            "relations": [],
+            "properties": [{
+                "name": "number",
+                "type": {
+                    "name": "integer"
+                },
+                "width": 10,
+                "nullable": true,
+                "dto": true,
+                "description": "house number on street",
+                "unique": false
+            }, {
+                "name": "line1",
+                "type": {
+                    "name": "string"
+                },
+                "width": 255,
+                "nullable": true,
+                "dto": true,
+                "description": "street name, postalcode or other info",
+                "unique": false
+            }]
+        }
+    ]
+}

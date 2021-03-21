@@ -1,0 +1,76 @@
+package filter
+
+import (
+	"encoding/json"
+	"net/http"
+	"strings"
+
+	"github.com/dgrijalva/jwt-go"
+
+	"imager/imager-auth/packages/web/auth"
+
+	"gitlab.com/aifaniyi/go-libs/logger"
+)
+
+type resp struct {
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	RequestID string `json:"req_id"`
+}
+
+// TokenValidator : middleware which verifies that request token is valid
+func TokenValidator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqID := GetRequestID(r.Context())
+		// Authorization: Bearer YWxhZGRpbjpvcGVuc2VzYW1l
+		authorization := r.Header.Get("Authorization")
+		if !strings.HasPrefix(authorization, "Bearer ") {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(resp{
+				Code:      40000,
+				Message:   "invalid Authorization header received",
+				RequestID: reqID,
+			})
+			return
+		}
+
+		claims := &auth.Claims{}
+		token, err := auth.Validate(authorization, claims)
+		if err != nil {
+			logger.Error.Printf("[%s] error while verifying token: %v", reqID, err)
+
+			if err == jwt.ErrSignatureInvalid {
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(resp{
+					Code:      40000,
+					Message:   "token signature is invalid",
+					RequestID: reqID,
+				})
+				return
+			}
+
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(resp{
+				Code:      40000,
+				Message:   "bad request: token signature is invalid",
+				RequestID: reqID,
+			})
+			return
+		}
+		if !token.Valid {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(resp{
+				Code:      40000,
+				Message:   "bad request",
+				RequestID: reqID,
+			})
+			return
+		}
+
+		// add claims fields on request context
+		ctx := setClaimsContextValues(r, claims)
+
+		// if all succeeds, proceed to next handler/middleware
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
