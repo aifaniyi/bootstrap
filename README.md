@@ -3,13 +3,12 @@
 A golang web application bootstraping framework.
 
 ## Installation
+
 ```bash
 go get github.com/aifaniyi/bootstrap
 ```
 
 ## Usage
-
-Export environment variables in your terminal
 
 ```bash
 # linux, macos
