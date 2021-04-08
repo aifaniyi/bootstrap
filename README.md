@@ -3,6 +3,7 @@
 A golang web application bootstraping framework.
 
 ## Installation
+
 ```bash
 go get github.com/aifaniyi/bootstrap
 ```
