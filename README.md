@@ -13,3 +13,5 @@ go get github.com/aifaniyi/bootstrap
 ```bash
 $ bootstrap new -i schema.spec.json -p newproject -o /path/to/output/dir
 ```
+
+Run "go mod vendor" to download dependencies and complete setup.

@@ -5,6 +5,12 @@ const (
 	Route = `
 	package web
 
+	import (
+		"github.com/go-chi/cors"
+		"github.com/go-chi/chi"
+		"github.com/go-chi/chi/middleware"
+	)
+
 // SetupRouteControllers : create controllers
 // and sets up route handlers
 func SetupRouteControllers(router *chi.Mux, config *settings.Settings,
