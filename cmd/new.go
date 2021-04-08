@@ -17,7 +17,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/aifaniyi/bootstrap/pkg/executors"
 	"github.com/aifaniyi/bootstrap/pkg/generator"
 	"github.com/spf13/cobra"
 )
@@ -40,12 +44,22 @@ to quickly create a Cobra application.`,
 
 		if input == "" {
 			fmt.Printf("\ninput spec file must be provided\n\n")
+			cmd.Help()
 			return
 		}
 
 		if project == "" {
 			fmt.Printf("\nproject name must be provided\n\n")
+			cmd.Help()
 			return
+		}
+
+		var err error
+		if output == "" {
+			output, err = os.Getwd()
+			if err != nil {
+				fmt.Printf("\nerror getting current working directory\n\n")
+			}
 		}
 
 		newProject(input, project, output)
@@ -69,9 +83,42 @@ func init() {
 	newCmd.Flags().StringP("output", "o", "", "output directory name. Defaults to current directory")
 }
 
+const (
+	buildPath = "/tmp/buildpath"
+)
+
 func newProject(input, project, output string) {
-	err := generator.GenerateGolang(input, output, project)
+	projectDir := filepath.Join(output, project)
+	// make directories
+	err := executors.CreateDirs(
+		executors.CreateDirReq{Name: buildPath, Force: true},
+		executors.CreateDirReq{Name: projectDir, Force: true},
+	)
+	if err != nil {
+		fmt.Printf("error creating dorectory: %v", err)
+		return
+	}
+
+	output, err = executors.GoInit(projectDir)
+	if err != nil {
+		if strings.Contains(err.Error(), "already") {
+			fmt.Printf("project init error: %s %v", output, err)
+			return
+		}
+	}
+
+	// clean OUTDIR if non-empty
+	err = generator.GenerateGolang(input, projectDir, project)
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	output, err = executors.GoImport(projectDir)
+	if err != nil {
+		fmt.Printf("project imports error: %s %v", output, err)
+		return
+	}
+
+	fmt.Printf("project created in %s\n\nrun \"go mod init\" to complete initialization\n",
+		projectDir)
 }
