@@ -65,6 +65,13 @@ func GenerateGolang(inputFile, outputDir, project string) error {
 		return fmt.Errorf("error writing main file: %v", err)
 	}
 
+	// write base entity
+	filename = filepath.Join(outputDir, models, "base.go")
+	err = writeFile(getGolangBaseModelContent(), filename)
+	if err != nil {
+		return fmt.Errorf("error writing base model file: %v", err)
+	}
+
 	// write entities
 	for key, entity := range entities {
 		filename := filepath.Join(outputDir, models, strings.ToLower(key)+".go")

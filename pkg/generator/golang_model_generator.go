@@ -47,10 +47,8 @@ func generateGolangEntity(entity entity, schema *schema) (string, error) {
 
 	// %s : %s
 	type %s struct {
-		ID int `+"`json:\"-\" gorm:\"primary_key\"`"+`
+		Base
 		%s
-		CreatedAt time.Time `+"`json:\"createdAt\"` // creation time"+`
-		UpdatedAt time.Time `+"`json:\"updatedAt\" gorm:\"default:CURRENT_TIMESTAMP\"`  // update time"+`
 	}
 	`, entity.Name, entity.Description,
 		entity.Name, fields)
@@ -131,6 +129,7 @@ process:
 
 func generateRelation(relation relation, entity entity) (string, error) {
 	upperCamel := strcase.ToCamel(relation.Entity)
+	lowerCamel := strcase.ToLowerCamel(relation.Entity)
 
 	switch strcase.ToLowerCamel(relation.Type) {
 	case "belongsTo":
@@ -139,15 +138,15 @@ func generateRelation(relation relation, entity entity) (string, error) {
 	case "hasOne":
 		crossID := strcase.ToCamel(entity.Name)
 		crossUpdates[upperCamel] = fmt.Sprintf("%sID int", crossID)
-		return fmt.Sprintf("%s %s", upperCamel, upperCamel), nil
+		return fmt.Sprintf("%s %s `json:\"%s\"`", upperCamel, upperCamel, lowerCamel), nil
 
 	case "hasMany":
 		crossID := strcase.ToCamel(entity.Name)
 		crossUpdates[upperCamel] = fmt.Sprintf("%sID int", crossID)
-		return fmt.Sprintf("%ss []%s", upperCamel, upperCamel), nil
+		return fmt.Sprintf("%ss []%s `json:\"%s\"`", upperCamel, upperCamel, lowerCamel), nil
 
 	case "manyToMany":
-		return fmt.Sprintf("%s []%s", upperCamel, upperCamel), nil
+		return fmt.Sprintf("%s []%s `json:\"%s\"`", upperCamel, upperCamel, lowerCamel), nil
 	}
 
 	return "", fmt.Errorf("unknown relation type %s. Accepts only [belongsTo, hasOne, hasMany, manyToMany]", relation.Type)
@@ -216,6 +215,11 @@ func getGolangMainContent() string {
 // content of server.go
 func getGolangServerContent() string {
 	return gotemplate.Server
+}
+
+// content of base.go
+func getGolangBaseModelContent() string {
+	return gotemplate.Base
 }
 
 // content of settings.go
