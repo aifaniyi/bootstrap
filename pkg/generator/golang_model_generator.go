@@ -94,7 +94,7 @@ func generateFields(entity entity, schema *schema) (string, error) {
 
 func generateProperty(property property) (string, error) {
 	switch property.Type.Name {
-	case "string", "integer":
+	case "string", "integer", "boolean":
 	default:
 		if _, ok := types[property.Type.Name]; ok {
 			goto process
@@ -110,7 +110,7 @@ process:
 
 	json := "-"
 	if property.Dto {
-		json = fmt.Sprintf("%s", property.Name)
+		json = property.Name
 	}
 
 	content := fmt.Sprintf("%s %s `json:\"%s\" %s` // %s",
@@ -136,7 +136,7 @@ func generateRelation(relation relation, entity entity) (string, error) {
 	case "hasMany":
 		crossID := strcase.ToCamel(entity.Name)
 		crossUpdates[upperCamel] = fmt.Sprintf("%sID int", crossID)
-		return fmt.Sprintf("%s []%s", upperCamel, upperCamel), nil
+		return fmt.Sprintf("%ss []%s", upperCamel, upperCamel), nil
 
 	case "manyToMany":
 		return fmt.Sprintf("%s []%s", upperCamel, upperCamel), nil
@@ -175,6 +175,9 @@ func getGolangType(str string) string {
 
 	case "string":
 		return "string"
+
+	case "boolean":
+		return "bool"
 
 	default:
 		return "string"
