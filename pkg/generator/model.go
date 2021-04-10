@@ -33,7 +33,7 @@ type property struct {
 	Type        fieldType `json:"type"`
 	Width       *int      `json:"width,omitempty"`
 	Nullable    bool      `json:"nullable,omitempty"`
-	Dto         bool      `json:"dto,omitempty"`
+	Dto         *bool     `json:"dto,omitempty"`
 	Indexable   bool      `json:"indexable,omitempty"`
 	Description string    `json:"description"`
 	Unique      bool      `json:"unique"`

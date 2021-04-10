@@ -94,7 +94,8 @@ func generateFields(entity entity, schema *schema) (string, error) {
 
 func generateProperty(property property) (string, error) {
 	switch property.Type.Name {
-	case "string", "integer", "boolean":
+	case "string", "integer", "integer32", "integer64", "boolean",
+		"float", "float32", "float64":
 	default:
 		if _, ok := types[property.Type.Name]; ok {
 			goto process
@@ -109,14 +110,21 @@ process:
 	}
 
 	json := "-"
-	if property.Dto {
+	if property.Dto == nil || *property.Dto {
 		json = property.Name
 	}
 
-	content := fmt.Sprintf("%s %s `json:\"%s\" %s` // %s",
-		name, getGolangType(property.Type.Name), json,
-		getGormString(property),
-		property.Description)
+	var content string
+	if property.Description != "" {
+		content = fmt.Sprintf("%s %s `json:\"%s\"%s` // %s",
+			name, getGolangType(property.Type.Name), json,
+			getGormString(property),
+			property.Description)
+	} else {
+		content = fmt.Sprintf("%s %s `json:\"%s\"%s`",
+			name, getGolangType(property.Type.Name), json,
+			getGormString(property))
+	}
 
 	return content, nil
 }
@@ -146,7 +154,7 @@ func generateRelation(relation relation, entity entity) (string, error) {
 }
 
 func getGormString(property property) string {
-	str := "gorm:\""
+	str := `gorm:"`
 	parts := make([]string, 0)
 
 	if property.Indexable {
@@ -165,7 +173,11 @@ func getGormString(property property) string {
 		parts = append(parts, fmt.Sprintf("size:%d", *property.Width))
 	}
 
-	return str + strings.Join(parts, ";") + "\""
+	if len(parts) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf(` %s%s"`, str, strings.Join(parts, ";")) // str + strings.Join(parts, ";") + "\""
 }
 
 func getGolangType(str string) string {
@@ -173,11 +185,23 @@ func getGolangType(str string) string {
 	case "integer":
 		return "int"
 
+	case "integer32":
+		return "int32"
+
+	case "integer64":
+		return "int64"
+
 	case "string":
 		return "string"
 
 	case "boolean":
 		return "bool"
+
+	case "float", "float32":
+		return "float32"
+
+	case "float64":
+		return "float64"
 
 	default:
 		return "string"
